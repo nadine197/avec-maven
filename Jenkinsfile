@@ -2,17 +2,25 @@ pipeline {
   agent any
 
   stages {
-    stage('Build') {
+  stage('Build') {
       steps {
-        sh 'mvn clean install'
+          sh(["mvn", "clean", "install"])
       }
-    }
+  }
 
-    stage('SonarQube') {
+  stage('Analyse SonarQube') {
       steps {
-        sh 'mvn sonar:sonar'
+          withSonarQubeEnv('SonarQube') {
+              sh([
+                  "mvn",
+                  "sonar:sonar",
+                  "-Dsonar.projectKey=student-management",
+                  "-Dsonar.host.url=http://localhost:9000",
+                  "-Dsonar.login=TON_TOKEN"
+              ])
+          }
       }
-    }
+  }
 
     stage('Docker') {
       steps {
