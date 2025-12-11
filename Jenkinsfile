@@ -27,7 +27,7 @@ pipeline {
                         mvn sonar:sonar \
                         -Dsonar.projectKey=student-management \
                         -Dsonar.host.url=http://localhost:9000 \
-                        -Dsonar.token=TON_TOKEN
+                        -Dsonar.token=sqa_eb6f3d79d84bee1c3848909d581c5ec6e431b3e7
                     """
                 }
             }
