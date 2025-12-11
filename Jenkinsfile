@@ -3,12 +3,14 @@ pipeline {
 
     environment {
         SONAR_HOST_URL = 'http://localhost:9000'
+        DOCKER_IMAGE = 'nadine2025/alpine:latest'
     }
 
     stages {
+
         stage('Cloner le projet') {
             steps {
-                git 'https://github.com/nadine197/avec-maven.git'
+                git branch: 'main', url: 'https://github.com/nadine197/avec-maven.git'
             }
         }
 
@@ -36,13 +38,13 @@ pipeline {
             }
         }
 
-        stage('Docker Build & Push') {
+        stage('Build & Push Docker') {
             steps {
                 withCredentials([usernamePassword(credentialsId: 'dockerhub-creds', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
                     sh """
                         docker login -u $DOCKER_USER -p $DOCKER_PASS
-                        docker build -t nadine2025/alpine:latest .
-                        docker push nadine2025/alpine:latest
+                        docker build -t ${DOCKER_IMAGE} .
+                        docker push ${DOCKER_IMAGE}
                     """
                 }
             }
@@ -50,7 +52,7 @@ pipeline {
     }
 
     post {
-        success { echo 'Pipeline terminé avec succès !' }
-        failure { echo 'Pipeline échoué !' }
+        success { echo 'Pipeline terminée avec succès ! ✅' }
+        failure { echo 'Pipeline échouée ! ❌' }
     }
 }
