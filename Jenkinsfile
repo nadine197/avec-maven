@@ -2,14 +2,10 @@ pipeline {
     agent any
 
     environment {
-        SONARQUBE_NAME = 'SonarQube'
         SONAR_HOST_URL = 'http://localhost:9000'
-        DOCKER_IMAGE = 'nadine2025/alpine'
-        DOCKERHUB_CREDENTIALS = 'dockerhub-creds' // ID des credentials Jenkins pour Docker Hub
     }
 
     stages {
-
         stage('Cloner le projet') {
             steps {
                 git 'https://github.com/nadine197/avec-maven.git'
@@ -25,7 +21,7 @@ pipeline {
         stage('Analyse SonarQube') {
             steps {
                 withCredentials([string(credentialsId: 'sonar-token', variable: 'SONAR_TOKEN')]) {
-                    withSonarQubeEnv("${SONARQUBE_NAME}") {
+                    withSonarQubeEnv('SonarQube') {
                         sh "mvn sonar:sonar -Dsonar.projectKey=student-management -Dsonar.host.url=${SONAR_HOST_URL} -Dsonar.login=$SONAR_TOKEN"
                     }
                 }
@@ -42,11 +38,11 @@ pipeline {
 
         stage('Docker Build & Push') {
             steps {
-                withCredentials([usernamePassword(credentialsId: "${DOCKERHUB_CREDENTIALS}", usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+                withCredentials([usernamePassword(credentialsId: 'dockerhub-creds', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
                     sh """
                         docker login -u $DOCKER_USER -p $DOCKER_PASS
-                        docker build -t ${DOCKER_IMAGE}:latest .
-                        docker push ${DOCKER_IMAGE}:latest
+                        docker build -t nadine2025/alpine:latest .
+                        docker push nadine2025/alpine:latest
                     """
                 }
             }
@@ -54,11 +50,7 @@ pipeline {
     }
 
     post {
-        success {
-            echo 'Pipeline terminé avec succès !'
-        }
-        failure {
-            echo 'Pipeline échoué !'
-        }
+        success { echo 'Pipeline terminé avec succès !' }
+        failure { echo 'Pipeline échoué !' }
     }
 }
