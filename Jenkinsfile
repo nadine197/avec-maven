@@ -9,7 +9,6 @@ pipeline {
         SONARQUBE_NAME = 'sonarqube'
         SONAR_PROJECT_KEY = 'student-management'
         SONAR_HOST_URL = 'http://172.21.102.174:9000'
-        DOCKER_CREDENTIALS = credentials('dockerhub')
         DOCKER_IMAGE = "nadine2025/student-management:1.0"
     }
 
@@ -47,6 +46,7 @@ pipeline {
                 }
             }
         }
+    }
 
         stage('Docker Build') {
             steps {
@@ -56,8 +56,13 @@ pipeline {
 
         stage('Docker Push') {
             steps {
-                sh 'echo $DOCKER_CREDENTIALS_PSW | docker login -u $DOCKER_CREDENTIALS_USR --password-stdin'
-                sh "docker push ${DOCKER_IMAGE}"
+                // Utilise withCredentials pour Docker
+                withCredentials([usernamePassword(credentialsId: 'dockerhub', 
+                                                  usernameVariable: 'DOCKER_USER', 
+                                                  passwordVariable: 'DOCKER_PASS')]) {
+                    sh 'echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin'
+                    sh "docker push ${DOCKER_IMAGE}"
+                }
             }
         }
     }
