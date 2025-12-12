@@ -2,11 +2,8 @@ pipeline {
     agent any
 
     environment {
-        // Nom de la configuration SonarQube dans Jenkins
         SONARQUBE_NAME = 'sonarqube'
-        // Clé du projet Sonar
         SONAR_PROJECT_KEY = 'student-management'
-        // URL du serveur SonarQube accessible depuis Jenkins
         SONAR_HOST_URL = 'http://172.21.102.174:9000'
     }
 
@@ -19,7 +16,7 @@ pipeline {
 
         stage('Build Maven') {
             steps {
-                sh 'mvn clean install'
+                sh 'mvn clean verify' // verify va générer le rapport JaCoCo
             }
         }
 
@@ -31,7 +28,8 @@ pipeline {
                         mvn sonar:sonar \
                           -Dsonar.projectKey=${SONAR_PROJECT_KEY} \
                           -Dsonar.host.url=${SONAR_HOST_URL} \
-                          -Dsonar.login=${SONAR_TOKEN}
+                          -Dsonar.login=${SONAR_TOKEN} \
+                          -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml
                         """
                     }
                 }
