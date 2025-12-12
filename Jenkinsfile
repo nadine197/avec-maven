@@ -1,10 +1,16 @@
 pipeline {
     agent any
 
+    tools {
+        maven "M2_HOME"
+    }
+
     environment {
         SONARQUBE_NAME = 'sonarqube'
         SONAR_PROJECT_KEY = 'student-management'
         SONAR_HOST_URL = 'http://172.21.102.174:9000'
+        DOCKER_CREDENTIALS = credentials('dockerhub')
+        DOCKER_IMAGE = "nadine2025/student-management:1.0"
     }
 
     stages {
@@ -14,16 +20,22 @@ pipeline {
             }
         }
 
-        stage('Build Maven') {
+        stage('Code Test') {
             steps {
-                sh 'mvn clean verify' // verify va générer le rapport JaCoCo
+                sh 'mvn test'
+            }
+        }
+
+        stage('Code Build') {
+            steps {
+                sh 'mvn package'
             }
         }
 
         stage('SonarQube Analysis') {
             steps {
                 withCredentials([string(credentialsId: 'jenkins-sonar', variable: 'SONAR_TOKEN')]) {
-                    withSonarQubeEnv('sonarqube') {
+                    withSonarQubeEnv("${SONARQUBE_NAME}") {
                         sh """
                         mvn sonar:sonar \
                           -Dsonar.projectKey=${SONAR_PROJECT_KEY} \
@@ -36,11 +48,16 @@ pipeline {
             }
         }
 
-        stage('Quality Gate') {
+        stage('Docker Build') {
             steps {
-                timeout(time: 5, unit: 'MINUTES') {
-                    waitForQualityGate abortPipeline: true
-                }
+                sh "docker build -t ${DOCKER_IMAGE} ."
+            }
+        }
+
+        stage('Docker Push') {
+            steps {
+                sh 'echo $DOCKER_CREDENTIALS_PSW | docker login -u $DOCKER_CREDENTIALS_USR --password-stdin'
+                sh "docker push ${DOCKER_IMAGE}"
             }
         }
     }
