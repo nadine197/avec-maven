@@ -21,24 +21,14 @@ pipeline {
                 sh 'mvn clean install'
             }
         }
-        pipeline {
-    agent any
 
-    environment {
-        SONARQUBE_NAME = 'sonarqube'
-        SONAR_PROJECT_KEY = 'student-management'
-    }
-
-    stages {
-        stage('Build & SonarQube Analysis') {
+        stage('SonarQube Analysis') {
             steps {
-                git url: 'https://github.com/nadine197/avec-maven.git', branch: 'main'
-
-                // Utilisation de la credential pour SonarQube
+                // Utilisation de la credential correcte pour Sonar
                 withCredentials([string(credentialsId: 'jenkins-sonar', variable: 'SONAR_TOKEN')]) {
                     withSonarQubeEnv('sonarqube') {
                         sh """
-                        mvn clean install sonar:sonar \
+                        mvn sonar:sonar \
                           -Dsonar.projectKey=${SONAR_PROJECT_KEY} \
                           -Dsonar.host.url=${env.SONAR_HOST_URL} \
                           -Dsonar.login=${SONAR_TOKEN}
@@ -47,25 +37,6 @@ pipeline {
                 }
             }
         }
-
-        stage('Quality Gate') {
-            steps {
-                timeout(time: 5, unit: 'MINUTES') {
-                    waitForQualityGate abortPipeline: true
-                }
-            }
-        }
-    }
-
-    post {
-        success {
-            echo 'Pipeline terminé avec succès ✅'
-        }
-        failure {
-            echo 'Pipeline échoué ❌'
-        }
-    }
-}
 
         stage('Quality Gate') {
             steps {
