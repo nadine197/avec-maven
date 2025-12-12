@@ -17,15 +17,16 @@ pipeline {
 
         stage('Build Maven') {
             steps {
+                // Compile et exécute les tests pour générer le coverage
                 sh 'mvn clean install'
             }
         }
 
         stage('SonarQube Analysis') {
             steps {
-                // Utilise le token stocké dans Jenkins (Global Credentials)
-                withCredentials([string(credentialsId: 'SONAR_TOKEN', variable: 'SONAR_TOKEN')]) {
-                    withSonarQubeEnv(SONARQUBE_NAME) {
+                // Utilisation de la credential correcte pour Sonar
+                withCredentials([string(credentialsId: 'jenkins-sonar', variable: 'SONAR_TOKEN')]) {
+                    withSonarQubeEnv('sonarqube') {
                         sh """
                         mvn sonar:sonar \
                           -Dsonar.projectKey=${SONAR_PROJECT_KEY} \
@@ -39,6 +40,7 @@ pipeline {
 
         stage('Quality Gate') {
             steps {
+                // Attend la fin de l'analyse Sonar et récupère le statut du Quality Gate
                 timeout(time: 5, unit: 'MINUTES') {
                     waitForQualityGate abortPipeline: true
                 }
