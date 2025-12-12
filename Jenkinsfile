@@ -6,6 +6,8 @@ pipeline {
         SONARQUBE_NAME = 'sonarqube'
         // Clé du projet Sonar
         SONAR_PROJECT_KEY = 'student-management'
+        // URL du serveur SonarQube accessible depuis Jenkins
+        SONAR_HOST_URL = 'http://172.21.102.174:9000'
     }
 
     stages {
@@ -17,20 +19,18 @@ pipeline {
 
         stage('Build Maven') {
             steps {
-                // Compile et exécute les tests pour générer le coverage
                 sh 'mvn clean install'
             }
         }
 
         stage('SonarQube Analysis') {
             steps {
-                // Utilisation de la credential correcte pour Sonar
                 withCredentials([string(credentialsId: 'jenkins-sonar', variable: 'SONAR_TOKEN')]) {
                     withSonarQubeEnv('sonarqube') {
                         sh """
                         mvn sonar:sonar \
                           -Dsonar.projectKey=${SONAR_PROJECT_KEY} \
-                          -Dsonar.host.url=${env.SONAR_HOST_URL} \
+                          -Dsonar.host.url=${SONAR_HOST_URL} \
                           -Dsonar.login=${SONAR_TOKEN}
                         """
                     }
@@ -40,7 +40,6 @@ pipeline {
 
         stage('Quality Gate') {
             steps {
-                // Attend la fin de l'analyse Sonar et récupère le statut du Quality Gate
                 timeout(time: 5, unit: 'MINUTES') {
                     waitForQualityGate abortPipeline: true
                 }
