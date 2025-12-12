@@ -46,7 +46,6 @@ pipeline {
                 }
             }
         }
-    }
 
         stage('Docker Build') {
             steps {
@@ -56,7 +55,6 @@ pipeline {
 
         stage('Docker Push') {
             steps {
-                // Utilise withCredentials pour Docker
                 withCredentials([usernamePassword(credentialsId: 'dockerhub', 
                                                   usernameVariable: 'DOCKER_USER', 
                                                   passwordVariable: 'DOCKER_PASS')]) {
@@ -65,7 +63,7 @@ pipeline {
                 }
             }
         }
-    }
+    } // <-- Fin du bloc stages
 
     post {
         success {
