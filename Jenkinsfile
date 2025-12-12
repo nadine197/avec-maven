@@ -6,6 +6,7 @@ pipeline {
         SONARQUBE_NAME = 'sonarqube'
         // Clé du projet Sonar
         SONAR_PROJECT_KEY = 'student-management'
+        SONAR_TOKEN='squ_9467252052b92205767639894796eb71a3de012c'
     }
 
     stages {
