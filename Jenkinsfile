@@ -26,26 +26,24 @@ pipeline {
         }
 
         stage('Code Build') {
-            steps {
-                sh 'mvn package'
-            }
-        }
-
+    steps {
+        sh 'mvn package jacoco:report'
+    }
+}
         stage('SonarQube Analysis') {
-            steps {
-                withCredentials([string(credentialsId: 'jenkins-sonar', variable: 'SONAR_TOKEN')]) {
-                    withSonarQubeEnv("${SONARQUBE_NAME}") {
-                        sh """
-                        mvn sonar:sonar \
-                          -Dsonar.projectKey=${SONAR_PROJECT_KEY} \
-                          -Dsonar.host.url=${SONAR_HOST_URL} \
-                          -Dsonar.login=${SONAR_TOKEN} \
-                          -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml
-                        """
-                    }
-                }
+    steps {
+        withCredentials([string(credentialsId: 'jenkins-sonar', variable: 'SONAR_TOKEN')]) {
+            withSonarQubeEnv("${SONARQUBE_NAME}") {
+                sh '''
+                mvn sonar:sonar \
+                  -Dsonar.projectKey=student-management \
+                  -Dsonar.token=$SONAR_TOKEN \
+                  -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml
+                '''
             }
         }
+    }
+}
 
         stage('Docker Build') {
             steps {
