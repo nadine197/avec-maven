@@ -26,21 +26,16 @@ pipeline {
             }
         }
 
-        stage('SonarQube Analysis') {
-            steps {
-                withCredentials([string(credentialsId: 'jenkins-sonar', variable: 'SONAR_TOKEN')]) {
-                    withSonarQubeEnv("${SONARQUBE_NAME}") {
-                        sh """
-                        mvn sonar:sonar \
-                          -Dsonar.projectKey=${SONAR_PROJECT_KEY} \
-                          -Dsonar.login=${SONAR_TOKEN} \
-                          -Dsonar.host.url=${SONAR_HOST_URL} \
-                          -Dsonar.coverage.jacoco.xmlReportPaths=target/jacoco/jacoco.xml
-                        """
-                    }
-                }
-            }
-        }
+withCredentials([string(credentialsId: 'jenkins-sonar', variable: 'SONAR_TOKEN')]) {
+    withSonarQubeEnv("${SONARQUBE_NAME}") {
+        sh """mvn sonar:sonar \
+            -Dsonar.projectKey=${SONAR_PROJECT_KEY} \
+            -Dsonar.login=\$SONAR_TOKEN \
+            -Dsonar.host.url=${SONAR_HOST_URL} \
+            -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml"""
+    }
+}
+
 
         stage('Quality Gate') {
             steps {
