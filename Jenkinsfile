@@ -30,16 +30,16 @@ pipeline {
         sh 'mvn package jacoco:report'
     }
 }
-        stage('SonarQube Analysis') {
+stage('SonarQube Analysis') {
     steps {
         withCredentials([string(credentialsId: 'jenkins-sonar', variable: 'SONAR_TOKEN')]) {
-            withSonarQubeEnv("${SONARQUBE_NAME}") {
-                sh '''
+            withSonarQubeEnv('sonarqube') {
+                sh """
                 mvn sonar:sonar \
                   -Dsonar.projectKey=student-management \
-                  -Dsonar.login=${SONAR_TOKEN}
+                  -Dsonar.login=\${SONAR_TOKEN} \
                   -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml
-                '''
+                """
             }
         }
     }
