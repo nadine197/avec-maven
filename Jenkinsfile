@@ -6,10 +6,10 @@ pipeline {
     }
 
     environment {
-        SONARQUBE_NAME = 'sonarqube'                        // Nom de l’instance SonarQube dans Jenkins
-        SONAR_PROJECT_KEY = 'student-management'           // Clé du projet SonarQube
-        SONAR_HOST_URL = 'http://172.21.102.174:9000'      // URL du serveur SonarQube
-        DOCKER_IMAGE = "nadine2025/student-management:1.0" // Image Docker
+        SONARQUBE_NAME = 'sonarqube'
+        SONAR_PROJECT_KEY = 'student-management'
+        SONAR_HOST_URL = 'http://172.21.102.174:9000'
+        DOCKER_IMAGE = "nadine2025/student-management:1.0"
     }
 
     stages {
@@ -21,7 +21,7 @@ pipeline {
 
         stage('Build & Test with Coverage') {
             steps {
-                sh 'mvn clean verify jacoco:report'
+                sh 'mvn clean verify jacoco:prepare-agent jacoco:report'
             }
         }
 
@@ -43,15 +43,20 @@ pipeline {
 
         stage('Quality Gate') {
             steps {
-                timeout(time: 5, unit: 'MINUTES') {
+                timeout(time: 10, unit: 'MINUTES') {
                     waitForQualityGate abortPipeline: true
                 }
             }
         }
 
-        stage('Docker Build & Push') {
+        stage('Docker Build') {
             steps {
                 sh "docker build -t ${DOCKER_IMAGE} ."
+            }
+        }
+
+        stage('Docker Push') {
+            steps {
                 withCredentials([usernamePassword(credentialsId: 'dockerhub',
                                                   usernameVariable: 'DOCKER_USER',
                                                   passwordVariable: 'DOCKER_PASS')]) {
