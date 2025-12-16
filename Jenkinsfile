@@ -37,7 +37,7 @@ pipeline {
                 sh '''
                 mvn sonar:sonar \
                   -Dsonar.projectKey=student-management \
-                  -Dsonar.token=$SONAR_TOKEN \
+                  -Dsonar.login=${SONAR_TOKEN}
                   -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml
                 '''
             }
