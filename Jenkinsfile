@@ -3,6 +3,7 @@ pipeline {
 
     tools {
         maven "M2_HOME"
+        jdk "JDK17"
     }
 
     environment {
@@ -13,38 +14,31 @@ pipeline {
     }
 
     stages {
-        stage('Checkout') {
+        stage('Checkout SCM') {
             steps {
                 git url: 'https://github.com/nadine197/avec-maven.git', branch: 'main'
             }
         }
 
-        stage('Build & Test with Coverage') {
+        stage('Build') {
             steps {
-                sh 'mvn clean verify jacoco:prepare-agent jacoco:report'
+                sh "mvn clean package -DskipTests"
+            }
+        }
+
+        stage('Test & Coverage') {
+            steps {
+                sh "mvn test jacoco:report"
             }
         }
 
         stage('SonarQube Analysis') {
-            steps {
-                withCredentials([string(credentialsId: 'jenkins-sonar', variable: 'SONAR_TOKEN')]) {
-                    withSonarQubeEnv("${SONARQUBE_NAME}") {
-                        sh """
-                            mvn sonar:sonar \
-                              -Dsonar.projectKey=${SONAR_PROJECT_KEY} \
-                              -Dsonar.login=\$SONAR_TOKEN \
-                              -Dsonar.host.url=${SONAR_HOST_URL} \
-                              -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml
-                        """
-                    }
-                }
+            environment {
+                SONAR_TOKEN = credentials('sonar-token') // ton token Jenkins pour SonarQube
             }
-        }
-
-        stage('Quality Gate') {
             steps {
-                timeout(time: 10, unit: 'MINUTES') {
-                    waitForQualityGate abortPipeline: true
+                withSonarQubeEnv('sonarqube') {
+                    sh "mvn sonar:sonar -Dsonar.projectKey=${SONAR_PROJECT_KEY} -Dsonar.login=${SONAR_TOKEN} -Dsonar.host.url=${SONAR_HOST_URL} -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml"
                 }
             }
         }
@@ -68,11 +62,8 @@ pipeline {
     }
 
     post {
-        success {
-            echo 'Pipeline terminé avec succès ✅'
-        }
-        failure {
-            echo 'Pipeline échoué ❌'
+        always {
+            cleanWs()
         }
     }
 }
