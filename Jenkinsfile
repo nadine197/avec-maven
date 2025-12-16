@@ -1,78 +1,134 @@
 pipeline {
+    environment {
+        registry = "nadine2025/student-management"
+        registryCredential = 'dockerhub_id'
+        dockerImage = ''
+    }
+
     agent any
 
-    tools {
-        maven "M2_HOME"
-    }
-
-    environment {
-        SONARQUBE_NAME = 'sonarqube'                        // Nom de l’instance SonarQube dans Jenkins
-        SONAR_PROJECT_KEY = 'student-management'           // Clé du projet SonarQube
-        SONAR_HOST_URL = 'http://172.21.102.174:9000'      // URL du serveur SonarQube
-        DOCKER_IMAGE = "nadine2025/student-management:1.0" // Image Docker
-    }
-
     stages {
-        stage('Checkout') {
+
+        stage('git') {
             steps {
-                git url: 'https://github.com/nadine197/avec-maven.git', branch: 'main'
+                echo 'pulling from github'
+
+                    git branch: 'main',
+                        url: 'https://github.com/nadine197/avec-maven.git'
+
             }
         }
 
-        stage('Build & Test with Coverage') {
+        stage('maven build') {
             steps {
-                // Compile, test et génère le rapport Jacoco XML
-                sh 'mvn clean verify jacoco:report'
+                echo 'maven build'
+
+                    sh 'mvn clean install'
+
             }
         }
+
+//         stage('testing with mockito') {
+//             steps {
+//                 echo 'maven testing'
+//
+//                     sh 'mvn test'
+//                 }
+//             }
+//         }
 
         stage('SonarQube Analysis') {
+    steps {
+        echo 'Running SonarQube analysis'
+
+            withSonarQubeEnv('scanner') {
+                sh """
+                    mvn sonar:sonar \
+                      -Dsonar.projectKey=student \
+                      -Dsonar.projectName=student
+                """
+
+        }
+    }
+}
+
+
+
+        stage('Building our image') {
             steps {
-                withCredentials([string(credentialsId: 'jenkins-sonar', variable: 'SONAR_TOKEN')]) {
-                    withSonarQubeEnv("${SONARQUBE_NAME}") {
-                        sh """
-                        mvn sonar:sonar \
-                          -Dsonar.projectKey=${SONAR_PROJECT_KEY} \
-                          -Dsonar.login=${SONAR_TOKEN} \
-                          -Dsonar.host.url=${SONAR_HOST_URL} \
-                          -Dsonar.coverage.jacoco.xmlReportPaths=target/jacoco/jacoco.xml
-                        """
-                    }
+
+                    script {
+                        dockerImage = docker.build("${registry}:${BUILD_NUMBER}")
+
                 }
             }
         }
 
-        stage('Quality Gate') {
+        stage('Deploy our image') {
+
+           steps {
+
+                 script {
+
+                docker.withRegistry( '', registryCredential ) {
+
+                        dockerImage.push()
+
+                  }
+
+              }
+
+            }
+
+      }
+
+
+
+        stage('Building and deploying using docker-compose') {
             steps {
-                // Attend le résultat du Quality Gate de SonarQube
-                timeout(time: 5, unit: 'MINUTES') {
-                    waitForQualityGate abortPipeline: true
+                dir('learning-service') {
+                    sh 'docker compose up -d'
                 }
             }
         }
 
-        stage('Docker Build & Push') {
+        stage('Grafana Prometheus') {
             steps {
-                // Build de l'image Docker
-                sh "docker build -t ${DOCKER_IMAGE} ."
 
-                // Push vers DockerHub
-                withCredentials([usernamePassword(credentialsId: 'dockerhub', 
-                                                  usernameVariable: 'DOCKER_USER', 
-                                                  passwordVariable: 'DOCKER_PASS')]) {
-                    sh 'echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin'
-                    sh "docker push ${DOCKER_IMAGE}"
-                }
+                    sh 'docker start prometheus'
+                    sh 'docker start grafana'
+
             }
         }
     }
 
     post {
-        success {
-            echo 'Pipeline terminé avec succès ✅'
-        }
-        failure {
-            echo 'Pipeline échoué ❌'
+        always {
+            dir('learning-service') {
+                publishHTML(target: [
+                    allowMissing: false,
+                    alwaysLinkToLastBuild: false,
+                    keepAll: true,
+                    reportDir: './target/site/jacoco',
+                    reportFiles: 'index.html',
+                    reportName: 'Jacoco Code Coverage Report'
+                ])
+            }
+
+            emailext(
+                to: "dhiaeddine.trabelsi@esprit.tn",
+                from: "Jenkins@example.com",
+                replyTo: "Jenkins@example.com",
+                mimeType: 'text/html',
+                subject: "STARTED: Job '${env.JOB_NAME} [${env.BUILD_NUMBER}]'",
+                body: """<p>STARTED: Job '${env.JOB_NAME} [${env.BUILD_NUMBER}]':</p>
+                         <p>Build Status: ${currentBuild.result}</p>
+                         <p>Check console output at
+                         <a href='${env.BUILD_URL}'>${env.JOB_NAME} [${env.BUILD_NUMBER}]</a></p>
+                         <img src="https://www.phpro.be/uploads/media/sulu-400x400/09/469-jenkins%404x.png?v=1-0?62b3251db82aa489a7ee194a74cc6fb1"
+                         alt="jenkins">""",
+                attachmentsPattern: 'target/site/jacoco/*.html'
+            )
         }
     }
 }
