@@ -21,31 +21,28 @@ pipeline {
 
         stage('Build & Test with Coverage') {
             steps {
-                // Compile, test et génère le rapport Jacoco XML
                 sh 'mvn clean verify jacoco:report'
             }
         }
 
-stage('SonarQube Analysis') {
-    steps {
-        withCredentials([string(credentialsId: 'jenkins-sonar', variable: 'SONAR_TOKEN')]) {
-            withSonarQubeEnv("${SONARQUBE_NAME}") {
-                sh """
-                    mvn sonar:sonar \
-                      -Dsonar.projectKey=${SONAR_PROJECT_KEY} \
-                      -Dsonar.login=\$SONAR_TOKEN \
-                      -Dsonar.host.url=${SONAR_HOST_URL} \
-                      -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml
-                """
+        stage('SonarQube Analysis') {
+            steps {
+                withCredentials([string(credentialsId: 'jenkins-sonar', variable: 'SONAR_TOKEN')]) {
+                    withSonarQubeEnv("${SONARQUBE_NAME}") {
+                        sh """
+                            mvn sonar:sonar \
+                              -Dsonar.projectKey=${SONAR_PROJECT_KEY} \
+                              -Dsonar.login=\$SONAR_TOKEN \
+                              -Dsonar.host.url=${SONAR_HOST_URL} \
+                              -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml
+                        """
+                    }
+                }
             }
         }
-    }
-}
-
 
         stage('Quality Gate') {
             steps {
-                // Attend le résultat du Quality Gate de SonarQube
                 timeout(time: 5, unit: 'MINUTES') {
                     waitForQualityGate abortPipeline: true
                 }
@@ -54,10 +51,7 @@ stage('SonarQube Analysis') {
 
         stage('Docker Build & Push') {
             steps {
-                // Build de l'image Docker
                 sh "docker build -t ${DOCKER_IMAGE} ."
-
-                // Push vers DockerHub
                 withCredentials([usernamePassword(credentialsId: 'dockerhub',
                                                   usernameVariable: 'DOCKER_USER',
                                                   passwordVariable: 'DOCKER_PASS')]) {
