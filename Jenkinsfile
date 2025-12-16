@@ -3,7 +3,6 @@ pipeline {
 
     tools {
         maven "M2_HOME"
-        
     }
 
     environment {
@@ -34,7 +33,7 @@ pipeline {
 
         stage('SonarQube Analysis') {
             environment {
-                SONAR_TOKEN = credentials('jenkins-sonar) // ton token Jenkins pour SonarQube
+                SONAR_TOKEN = credentials('jenkins-sonar')
             }
             steps {
                 withSonarQubeEnv('sonarqube') {
