@@ -67,6 +67,18 @@ pipeline {
             }
         }
     }
+    stage('Deploy to Kubernetes') {
+    when {
+        branch 'main'
+    }
+    steps {
+        sh '''
+        kubectl apply -f k8s/ -n devops
+        kubectl rollout status deployment/student-management -n devops
+        '''
+    }
+}
+
 
     post {
         always {
