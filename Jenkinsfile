@@ -53,12 +53,14 @@ pipeline {
             }
         }
 
- stage('Docker Push') {
+stage('Docker Push') {
     when {
-        branch 'main'  // ou une autre condition
+        branch 'main'
     }
     steps {
-        sh 'nadine2025/student-management:latest'
+        withDockerRegistry([credentialsId: 'docker-hub-credentials', url: '']) {
+            sh "docker push ${DOCKER_IMAGE}"
+        }
     }
 }
 
