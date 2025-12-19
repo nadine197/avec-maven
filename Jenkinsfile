@@ -52,23 +52,16 @@ pipeline {
             }
         }
 
-stage('Docker Push') {
-    steps {
-        script {
-            // Injection sécurisée des credentials Jenkins (Username + PAT Docker Hub)
-            withCredentials([usernamePassword(
-                credentialsId: 'dockerhub',          // ID du credential Jenkins
-                usernameVariable: 'DOCKER_USER',     // variable pour le username
-                passwordVariable: 'DOCKER_TOKEN'     // variable pour le PAT Docker Hub
-            )]) {
-                // Connexion à Docker Hub avec le PAT
-                sh 'echo $DOCKER_TOKEN | docker login -u $DOCKER_USER --password-stdin'
-                // Pousser l'image Docker
-                sh "docker push ${DOCKER_IMAGE}"
+ stage('Docker Push') {
+            when {
+                branch 'main'
+            }
+            steps {
+                withDockerRegistry([credentialsId: 'dockerhub', url: '']) {
+                    sh "docker push ${DOCKER_IMAGE}"
+                }
             }
         }
-    }
-}
 
     } // <- fin de stages
 
