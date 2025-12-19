@@ -53,20 +53,14 @@ pipeline {
             }
         }
 
-        stage('Docker Push') {
-            when {
-                branch 'main' // Pousse l'image seulement depuis la branche principale
-            }
-            steps {
-                withCredentials([usernamePassword(credentialsId: 'dockerhub',
-                                                  usernameVariable: 'DOCKER_USER',
-                                                  passwordVariable: 'DOCKER_PASS')]) {
-                    sh 'echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin'
-                    sh "docker push ${DOCKER_IMAGE}"
-                }
-            }
-        }
+ stage('Docker Push') {
+    when {
+        branch 'main'  // ou une autre condition
     }
+    steps {
+        sh 'nadine2025/student-management:latest'
+    }
+}
 
 
 
