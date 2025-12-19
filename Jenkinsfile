@@ -41,7 +41,6 @@ pipeline {
             }
             steps {
                 withSonarQubeEnv('sonarqube') {
-                    // Utilisation sécurisée du token sans interpolation Groovy
                     sh "mvn sonar:sonar -Dsonar.projectKey=${SONAR_PROJECT_KEY} -Dsonar.login=$SONAR_TOKEN -Dsonar.host.url=${SONAR_HOST_URL} -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml"
                 }
             }
@@ -53,18 +52,18 @@ pipeline {
             }
         }
 
-stage('Docker Push') {
-    when {
-        branch 'main'
-    }
-    steps {
-        withDockerRegistry([credentialsId: 'dockerhub', url: '']) {
-            sh "docker push ${DOCKER_IMAGE}"
+        stage('Docker Push') {
+            when {
+                branch 'main'
+            }
+            steps {
+                withDockerRegistry([credentialsId: 'dockerhub', url: '']) {
+                    sh "docker push ${DOCKER_IMAGE}"
+                }
+            }
         }
-    }
-}
 
-
+    } // <- fin des stages
 
     post {
         always {
@@ -77,4 +76,5 @@ stage('Docker Push') {
             echo "Pipeline échoué ❌"
         }
     }
-}
+
+} // <- fin du pipeline
