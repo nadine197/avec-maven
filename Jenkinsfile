@@ -52,7 +52,7 @@ pipeline {
             }
         }
 
-tage('Docker Push') {
+stage('Docker Push') {
             when {
                 branch 'main'
             }
