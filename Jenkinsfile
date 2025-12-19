@@ -52,18 +52,17 @@ pipeline {
             }
         }
 
-        stage('Docker Push') {
-            when {
-                branch 'main'
-            }
-            steps {
-                withDockerRegistry([credentialsId: 'dockerhub', url: '']) {
-                    sh "docker push ${DOCKER_IMAGE}"
-                }
-            }
+   stage('Docker Push') {
+    steps {
+        script {
+            // Connexion à Docker Hub avec tes credentials Jenkins
+            sh 'echo $DOCKER_CREDENTIALS_PSW | docker login -u $DOCKER_CREDENTIALS_USR --password-stdin'
+            // Pousser l'image
+            sh "docker push ${DOCKER_IMAGE}"
         }
+    }
+}
 
-    } // <- fin des stages
 
     post {
         always {
